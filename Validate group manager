@@ -1,0 +1,77 @@
+*** Group selection *** //onChange client script
+
+Note : Make sure enable Isolate script in client script
+
+function onChange(control, oldValue, newValue, isLoading) {
+    if (isLoading || newValue == '') {
+        return;
+    }
+
+    var maxGrp = 5; //Option count
+    var varName = 'group'; //List collector variable name
+    var leftBucket = gel(varName + '_select_0');
+    var rightBucket = gel(varName + '_select_1');
+    var selectedOptions = rightBucket.options; //Return right side bucket option
+
+    if (selectedOptions.length > maxGrp) {
+        var selectedIDs = [];
+        var index = 0;
+        for (var i = maxGrp; i < selectedOptions.length; i++) {
+            selectedIDs[index] = i;
+            index++;
+        }
+        //Move options and sort the left bucket
+        moveSelectedOptions(selectedIDs, rightBucket, leftBucket, '--None--'); //Predefind javascript function
+        sortSelect(leftBucket);
+        alert('You can select maximum ' + maxGrp + ' group');
+    }
+}
+
+*** Validate group manager *** //onSubmit client script
+
+
+function onSubmit() {
+
+    var ga = new GlideAjax('groupManagerValidation');
+    ga.addParam('sysparm_name', 'groupList');
+    ga.addParam('sysparm_groupSysId', g_form.getValue('group'));
+    ga.getXML(groupResult);
+
+    function groupResult(response) {
+        var answer = response.responseXML.documentElement.getAttribute("answer");
+
+        if (answer == false) {
+            alert("Group Manager not same in selected group");
+            return false;
+        }
+    }
+}
+
+
+*** groupManagerValidation *** script include
+
+var groupManagerValidation = Class.create();
+groupManagerValidation.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+
+    groupList: function() {
+
+        var grp = new GlideRecord('sys_user_group');
+        grp.addQuery('sys_id', 'IN', this.getParameter('sysparm_groupSysId'));
+        grp.query();
+
+        var grpManager = [];
+        while (grp.next()) {
+            if (!grp.manager.nil()) {
+                grpManager.push(grp.getDisplayValue('manager'));
+            }
+        }
+
+        var uniqueManager = new ArrayUtil().unique(grpManager); //Return unique array value
+
+        if (uniqueManager.length == 1)
+            return true;
+        else
+            return false;
+    },
+    type: 'groupManagerValidation'
+});
