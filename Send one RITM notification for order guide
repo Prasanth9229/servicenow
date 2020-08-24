@@ -1,0 +1,11 @@
+*** After Business Rule in sc_request ***
+
+    var ritm = new GlideRecord('sc_req_item');
+    ritm.addQuery('request', current.sys_id);
+    ritm.addEncodedQuery('order_guide.category.title=Can We Help You?'); //category title 
+    ritm.orderBy('number');
+    ritm.query();
+
+    if (ritm.next()) {
+        gs.eventQueue('ritm.single.request.notify', ritm, ritm.getValue('requested_for'), ritm.getValue('opened_by'));  //Customize parm values according to req
+    }
